@@ -50,8 +50,23 @@ namespace CsharpQuiz
             
 
             var score = _questions.Count(question => question.UserResponse == question.ValidResponse);
+            Console.WriteLine( " ********************************************");
+            Console.WriteLine( " *                                          *");
+            Console.WriteLine($" *         Votre score: {score}/{_questions.Count}                *");                            
+            Console.WriteLine( " *                                          *");
+            Console.WriteLine( " ********************************************");
+            
 
-            Console.WriteLine($"Votre score: {score}/{_questions.Count}");
+            if (score >= 5)
+            {
+                Console.WriteLine("BRAVO, tu as gagné(e)");
+            }
+            else
+            {
+                Console.WriteLine("DESOLE, la prochaine fois");
+            }
+
+           
             
             Console.WriteLine("Voulez-vous avoir un récap approfondi ? (Y/n)");
             

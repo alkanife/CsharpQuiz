@@ -4,16 +4,33 @@ namespace CsharpQuiz
 {
     internal abstract class Program
     {
+        private static string _reset = "\u001B[0m";
+        private static string _black = "\u001B[30m";
+        private static string _red = "\u001B[31m";
+        private static string _green = "\u001B[32m";
+        private static string _yellow = "\u001B[33m";
+        private static string _blue = "\u001B[34m";
+        private static string _purple = "\u001B[35m";
+        private static string _cyan = "\u001B[36m";
+        private static string _white = "\u001B[37m";
+            
+        private static string _blackBackground = "\u001B[40m";
+        private static string _redBackground = "\u001B[41m";
+        private static string _greenBackground = "\u001B[42m";
+        private static string _yellowBackground = "\u001B[43m";
+        private static string _blueBackground = "\u001B[44m";
+        private static string _purpleBackground = "\u001B[45m";
+        private static string _cyanBackground = "\u001B[46m";
+        private static string _whiteBackground = "\u001B[47m";
+        
         private static List<Question> _questions = new();
         
         private static void Main(string[] args)
         {
             CreateQuestions();
 
-            int[][] array;
-
             Console.Clear();
-            Console.WriteLine("Bienvenue au Quiz C# !");
+            Console.WriteLine($"Bienvenue au Quiz C# !");
             Console.WriteLine($"Il y a {_questions.Count} questions");
             Console.WriteLine("Taper sur n'importe quelle touche si vous êtes prêt. CTRL+C pour annuler");
             Console.ReadKey();
@@ -29,6 +46,8 @@ namespace CsharpQuiz
             Console.Clear();
             
             Console.WriteLine("Vous avez répondu a toutes les questions !");
+            
+            
 
             var score = _questions.Count(question => question.UserResponse == question.ValidResponse);
 
@@ -40,7 +59,7 @@ namespace CsharpQuiz
 
             if (userStringInput == null)
             {
-                Console.WriteLine("Erreur console (null)");
+                Console.WriteLine($"{_red}Erreur console (null){_reset}");
                 return;
             }
                 
@@ -50,60 +69,21 @@ namespace CsharpQuiz
                 return;
             }
             
-            i = 0;
-            foreach (var question in _questions)
-            {
-                i++;
-                Console.Clear();
-            
-                Console.WriteLine("RECAPITULATIF");
-                Console.WriteLine($"Question {i} sur {_questions.Count}");
-                Console.WriteLine();
-                Console.WriteLine($"{question.Title}");
-            
-                var j = 1;
-                foreach (var resp in question.Responses!)
-                {
-                    Console.Write(j == question.ValidResponse ? "[V] " : "[X] ");
-                
-                    Console.Write($"{j}. {resp}");
-                
-                    Console.Write(j == question.UserResponse ? " <-- Votre réponse" : "");
-                    Console.WriteLine();
-                    j++;
-                }
-            
-                Console.WriteLine();
-
-                if (question.UserResponse == question.ValidResponse)
-                {
-                    Console.WriteLine("Vous avez trouvé la bonne réponse, bien joué !");
-                }
-                else
-                {
-                    Console.WriteLine(question.Recap);
-                }
-            
-            
-                Console.WriteLine("\nTaper n'importe quelle touche pour continuer");
-                Console.ReadLine();
-            }
-            
-            Console.Clear();
-            Console.WriteLine($"Fin du récap ! Pour rappel votre score était de {score}/{_questions.Count}. Au revoir !");
+            ShowRecap(0);
         }
 
         private static bool AskQuestion(Question question, int id)
         {
             Console.Clear();
-            Console.WriteLine($"Question numéro {id}:");
             Console.WriteLine();
-            Console.WriteLine($"{question.Title}");
+            Console.WriteLine($"{_yellow} Question {id} sur {_questions.Count}{_reset}");
+            Console.WriteLine($"{_cyan} {question.Title}{_reset}");
+            Console.WriteLine();
 
             var i = 1;
             foreach (var resp in question.Responses!)
             {
-                Console.WriteLine($"{i}. {resp}");
+                Console.WriteLine($" {i}. {_cyan}{resp}{_reset}");
                 i++;
             }
             
@@ -111,9 +91,11 @@ namespace CsharpQuiz
 
             do
             {
-                Console.Write("Entrer réponse> ");
+                Console.Write($"Votre réponse : {_purple}");
 
                 var userStringInput = Console.ReadLine();
+                
+                Console.Write($"{_reset}");
 
                 if (userStringInput == null)
                 {
@@ -131,7 +113,7 @@ namespace CsharpQuiz
 
                 if (!tryParse || userIntInput == 0 || userIntInput > question.Responses.Length)
                 {
-                    Console.WriteLine($"Réponse invalide (doit entre 1 et {question.Responses.Length})");
+                    Console.WriteLine($"{_red}Réponse invalide (doit entre 1 et {question.Responses.Length}){_reset}");
                 }
                 else
                 {
@@ -143,6 +125,76 @@ namespace CsharpQuiz
             return true;
         }
 
+        private static void ShowRecap(int index)
+        {
+            while (true)
+            {
+                var question = _questions[index];
+                var id = index + 1;
+
+                Console.Clear();
+
+                Console.WriteLine($"(RÉCAPITULATIF) QUESTION {id} / {_questions.Count}");
+                Console.WriteLine();
+                Console.WriteLine($"{question.Title}");
+                Console.WriteLine();
+
+                var i = 1;
+                foreach (var resp in question.Responses!)
+                {
+                    Console.Write(i == question.ValidResponse ? $" ✅ {_green}" : $" ❌ {_red}");
+
+                    Console.Write($" {i}. {resp}{_reset}");
+
+                    Console.Write(i == question.UserResponse ? $"{_blue} <-- Votre réponse {_reset}" : "");
+                    Console.WriteLine();
+                    i++;
+                }
+
+                Console.WriteLine();
+
+                Console.WriteLine(question.Recap);
+
+                Console.WriteLine("\nUtilisez les flèches <- -> pour naviguer dans le récapitulatif.");
+
+                var consoleKeyInfo = Console.ReadKey();
+
+                switch (consoleKeyInfo.Key)
+                {
+                    case ConsoleKey.LeftArrow:
+                        if (index <= 0)
+                        {
+                            index = 0;
+                            continue;
+                        }
+
+                        index -= 1;
+                        continue;
+
+                    case ConsoleKey.RightArrow:
+                        if (index + 1 >= _questions.Count)
+                            End();
+                        else
+                        {
+                            index += 1;
+                            continue;
+                        }
+                        break;
+
+                    default:
+                        continue;
+                }
+
+                break;
+            }
+        }
+
+        private static void End()
+        {
+            Console.Clear();
+            Console.WriteLine($"Fin du récap ! Pour rappel votre score était de /{_questions.Count}. Au revoir !");
+        }
+        
         private static void CreateQuestions()
         {
             _questions = new List<Question>
@@ -158,11 +210,11 @@ namespace CsharpQuiz
                         "Char"
                     },
                     ValidResponse = 3,
-                    Recap = "Le Boolean est la bonne réponse, car les autres proposes des chaînes de caractères (String), un seul caractère (char), ou un nombre (int).\n"
+                    Recap = "Le Boolean est la bonne réponse, car les autres proposes des chaînes de caractères (String), un seul caractère (char), ou un nombre (int)."
                 },
                 new()
                 {
-                    Title = "Quelle est la bonne façon d'écrire quelque chose dans la console ?\n",
+                    Title = "Quelle est la bonne façon d'écrire quelque chose dans la console ?",
                     Responses = new []
                     {
                         "Console.Write(“Hello world!”);",
@@ -171,11 +223,11 @@ namespace CsharpQuiz
                         "Console.WriteLine(`Hello world!`);"
                     },
                     ValidResponse = 1,
-                    Recap = "La première est la bonne réponse. Même si la 4ème réponse peut sembler bonne, elle utilise les mauvais guillemets pour la chaîne de caractères.\n"
+                    Recap = "La première est la bonne réponse. Même si la 4ème réponse peut sembler bonne, elle utilise les mauvais guillemets pour la chaîne de caractères."
                 },
                  new()
                 {
-                    Title = "Lequel des éléments suivants n’est pas un type de variable valide dans le Framework .Net?\n\n",
+                    Title = "Lequel des éléments suivants n’est pas un type de variable valide dans le Framework .Net?",
                     Responses = new []
                     {
                         "double",
@@ -184,11 +236,11 @@ namespace CsharpQuiz
                         "mime"
                     },
                     ValidResponse = 4,
-                    Recap = "Le “mime” est une bonne réponse. En effet, ce n’est pas une variable, mais un protocole d’adresses mails, ce qui n’a rien à voir.\n"
+                    Recap = "Le “mime” est une bonne réponse. En effet, ce n’est pas une variable, mais un protocole d’adresses mails, ce qui n’a rien à voir."
                 },
                  new()
                 {
-                    Title = " Lequel de ces mots permettent de définir le début d’une boucle ?",
+                    Title = "Lequel de ces mots permettent de définir le début d’une boucle ?",
                     Responses = new []
                     {
                         "Bool",
@@ -201,7 +253,7 @@ namespace CsharpQuiz
                 },
                  new()
                 {
-                    Title = "Quel sera le résultat de cette variable ? \nvar result = 2 / 3;\n",
+                    Title = $"Quel sera le résultat de cette variable ? \n\n{_blue} var result = 2 / 3;{_reset}",
                     Responses = new []
                     {
                         "result de type double",
@@ -210,7 +262,7 @@ namespace CsharpQuiz
                         "result de type int"
                     },
                     ValidResponse = 4,
-                    Recap = "La 4ème réponse est la bonne. Même si le résultat possède une virgule, tant que le calcul n’est pas effectué et directement écrit, la variable prendra comme type : int.\n"
+                    Recap = "La 4ème réponse est la bonne. Même si le résultat possède une virgule, tant que le calcul n’est pas effectué et directement écrit, la variable prendra comme type : int."
                 },
                  new()
                 {
@@ -223,7 +275,7 @@ namespace CsharpQuiz
                         "Console.Readline()"
                     },
                     ValidResponse = 1,
-                    Recap = "La première réponse est la bonne. ReadLine() est une méthode qui lit entièrement la dernière ligne entrée. ReadKey() obtient le caractère suivant ou la touche de fonction sur laquelle l'utilisateur a appuyé.\n"
+                    Recap = "La première réponse est la bonne. ReadLine() est une méthode qui lit entièrement la dernière ligne entrée. ReadKey() obtient le caractère suivant ou la touche de fonction sur laquelle l'utilisateur a appuyé."
                 },
                  new()
                 {
@@ -236,7 +288,7 @@ namespace CsharpQuiz
                         "System.Array[2] myArray;"
                     },
                     ValidResponse = 1,
-                    Recap = " La bonne réponse est la première. Seule la virgule présente dans “int[,]” permet de représenter un tableau multidimensionnel.\n"
+                    Recap = "La bonne réponse est la première. Seule la virgule présente dans “int[,]” permet de représenter un tableau multidimensionnel."
                 },
                  new()
                 {
@@ -245,29 +297,28 @@ namespace CsharpQuiz
                     {
                         "L'opérateur == compare les références, Equals() compare seulement le contenu",
                         "L'opérateur == compare le contenu, Equals() compare les références",
-                        "L'opérateur == compare les références, Equals() compare les références   ",
+                        "L'opérateur == compare les références, Equals() compare les références",
                         "L'opérateur == compare le contenu, Equals() compare le contenu"
                     },
                     ValidResponse = 1,
-                    Recap = " La bonne réponse est la première. La méthode .equals() est préférablement à utiliser pour comparer la valeur de deux Strings tandis que l'opérateur « == » les compare par référence. Également, lorsqu'il s'agit de deux Integers, il est préférable d’utiliser « == ».\n"
+                    Recap = "La bonne réponse est la première. La méthode .equals() est préférablement à utiliser pour comparer la valeur de deux Strings tandis que l'opérateur « == » les compare par référence. Également, lorsqu'il s'agit de deux Integers, il est préférable d’utiliser « == »."
                 },
                  new()
                 {
-                    Title = "le point d'entrée du programme est une méthode: \n-static void Main()\n",
+                    Title = "le point d'entrée du programme est une méthode :",
                     Responses = new []
                     {
-                        "static void Main() ",
-                        "void Main(string[] args)   ",
-                        "static void main(string{} args)  ",
-                       
+                        "static void Main()",
+                        "void Main(string[] args)",
+                        "static void main(string{} args)",
                         "static void Main(string[] args) "
                     },
                     ValidResponse = 4,
-                    Recap = " La première réponse est la 4ème. En effet, la première n’a pas d’arguments, la deuxième n’est pas statique, et la troisième a son tableau d'argument mal orthographié.\n"
+                    Recap = "La première réponse est la 4ème. En effet, la première n’a pas d’arguments, la deuxième n’est pas statique, et la troisième a son tableau d'argument mal orthographié."
                 },
                  new()
                 {
-                    Title = "Quelle est la sortie de l'expression suivante : \nvar calcul = 5 + Math.BigMule(3, 2);\n",
+                    Title = "Quelle est la sortie de l'expression suivante : \n\nvar calcul = 5 + Math.BigMule(3, 2);",
                     Responses = new []
                     {
                         "16",
@@ -276,7 +327,7 @@ namespace CsharpQuiz
                         "10"
                     },
                     ValidResponse = 3,
-                    Recap = " La 3ème réponse est la bonne, en effet Math.BigMule(3, 2) est une opération de multiple, exactement comme “3 x 2”."
+                    Recap = "La 3ème réponse est la bonne, en effet Math.BigMule(3, 2) est une opération de multiple, exactement comme “3 x 2”."
                 },
                
 

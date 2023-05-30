@@ -10,10 +10,12 @@ namespace CsharpQuiz
         {
             CreateQuestions();
 
+            int[][] array;
+
             Console.Clear();
             Console.WriteLine("Bienvenue au Quiz C# !");
             Console.WriteLine($"Il y a {_questions.Count} questions");
-            Console.WriteLine("Taper entrer si vous êtes prêt");
+            Console.WriteLine("Taper sur n'importe quelle touche si vous êtes prêt. CTRL+C pour annuler");
             Console.ReadKey();
 
             var i = 0;
@@ -52,48 +54,43 @@ namespace CsharpQuiz
             foreach (var question in _questions)
             {
                 i++;
-                ShowRecap(question, i);
+                Console.Clear();
+            
+                Console.WriteLine("RECAPITULATIF");
+                Console.WriteLine($"Question {i} sur {_questions.Count}");
+                Console.WriteLine();
+                Console.WriteLine($"{question.Title}");
+            
+                var j = 1;
+                foreach (var resp in question.Responses!)
+                {
+                    Console.Write(j == question.ValidResponse ? "[V] " : "[X] ");
+                
+                    Console.Write($"{j}. {resp}");
+                
+                    Console.Write(j == question.UserResponse ? " <-- Votre réponse" : "");
+                    Console.WriteLine();
+                    j++;
+                }
+            
+                Console.WriteLine();
+
+                if (question.UserResponse == question.ValidResponse)
+                {
+                    Console.WriteLine("Vous avez trouvé la bonne réponse, bien joué !");
+                }
+                else
+                {
+                    Console.WriteLine(question.Recap);
+                }
+            
+            
+                Console.WriteLine("\nTaper n'importe quelle touche pour continuer");
+                Console.ReadLine();
             }
             
             Console.Clear();
             Console.WriteLine($"Fin du récap ! Pour rappel votre score était de {score}/{_questions.Count}. Au revoir !");
-        }
-
-        private static void ShowRecap(Question question, int id)
-        {
-            Console.Clear();
-            
-            Console.WriteLine("RECAPITULATIF");
-            Console.WriteLine($"Question {id} sur {_questions.Count}");
-            Console.WriteLine();
-            Console.WriteLine($"{question.Title}");
-            
-            var i = 1;
-            foreach (var resp in question.Responses!)
-            {
-                Console.Write(i == question.ValidResponse ? "[V] " : "[X] ");
-                
-                Console.Write($"{i}. {resp}");
-                
-                Console.Write(i == question.UserResponse ? " <-- Votre réponse" : "");
-                Console.Write("\n");
-                i++;
-            }
-            
-            Console.WriteLine();
-
-            if (question.UserResponse == question.ValidResponse)
-            {
-                Console.WriteLine("Vous avez trouvé la bonne réponse, bien joué !");
-            }
-            else
-            {
-                Console.WriteLine(question.Recap);
-            }
-            
-            
-            Console.WriteLine("\nTaper entrer pour continuer");
-            Console.ReadLine();
         }
 
         private static bool AskQuestion(Question question, int id)
@@ -114,7 +111,7 @@ namespace CsharpQuiz
 
             do
             {
-                Console.WriteLine("Entrer réponse");
+                Console.Write("Entrer réponse> ");
 
                 var userStringInput = Console.ReadLine();
 
@@ -134,7 +131,7 @@ namespace CsharpQuiz
 
                 if (!tryParse || userIntInput == 0 || userIntInput > question.Responses.Length)
                 {
-                    Console.WriteLine($"Réponse invalide (entre 1 et {question.Responses.Length})");
+                    Console.WriteLine($"Réponse invalide (doit entre 1 et {question.Responses.Length})");
                 }
                 else
                 {

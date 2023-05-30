@@ -1,95 +1,86 @@
-﻿using static System.Int32;
-
-namespace CsharpQuiz
+﻿namespace CsharpQuiz
 {
     internal abstract class Program
     {
-        private static string _reset = "\u001B[0m";
-        private static string _black = "\u001B[30m";
-        private static string _red = "\u001B[31m";
-        private static string _green = "\u001B[32m";
-        private static string _yellow = "\u001B[33m";
-        private static string _blue = "\u001B[34m";
-        private static string _purple = "\u001B[35m";
-        private static string _cyan = "\u001B[36m";
-        private static string _white = "\u001B[37m";
-            
-        private static string _blackBackground = "\u001B[40m";
-        private static string _redBackground = "\u001B[41m";
-        private static string _greenBackground = "\u001B[42m";
-        private static string _yellowBackground = "\u001B[43m";
-        private static string _blueBackground = "\u001B[44m";
-        private static string _purpleBackground = "\u001B[45m";
-        private static string _cyanBackground = "\u001B[46m";
-        private static string _whiteBackground = "\u001B[47m";
-        
-        private static string CYAN_BOLD = "\u001B[1;36m";
-        
-        private static List<Question> _questions = new();
+        private static string? _score;
+        private static int _intScore;
         
         private static void Main(string[] args)
         {
-            CreateQuestions();
+            QuizQuestions.CreateQuestions();
 
             Console.Clear();
-            Console.WriteLine($"Bienvenue au Quiz C# !");
-            Console.WriteLine($"Il y a {_questions.Count} questions");
-            Console.WriteLine("Taper sur n'importe quelle touche si vous êtes prêt. CTRL+C pour annuler");
+            Console.WriteLine(" .d88888b.           d8b                         .d8888b.    888  888   ");
+            Console.WriteLine("d88P\" \"Y88b          Y8P                        d88P  Y88b   888  888   ");
+            Console.WriteLine("888     888                                     888    888 888888888888 ");
+            Console.WriteLine("888     888 888  888 888 88888888 88888888      888          888  888   ");
+            Console.WriteLine("888     888 888  888 888    d88P     d88P       888          888  888   ");
+            Console.WriteLine("888 Y8b 888 888  888 888   d88P     d88P        888    888 888888888888 ");
+            Console.WriteLine("Y88b.Y8b88P Y88b 888 888  d88P     d88P         Y88b  d88P   888  888   ");
+            Console.WriteLine(" \"Y888888\"   \"Y88888 888 88888888 88888888       \"Y8888P\"    888  888   ");
+            Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.CyanBright}Bienvenue à ce quiz C# !");
+            Console.WriteLine($"{AnsiColors.CyanBright}Vous allez devoir répondre à {AnsiColors.White}{QuizQuestions.Count()} {AnsiColors.CyanBright}questions, chacune vous rapportant 1 point.{AnsiColors.Reset}");
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.BlackBright}Appuyez sur une touche pour continuer...{AnsiColors.Reset}");
             Console.ReadKey();
 
             var i = 0;
-            foreach (var question in _questions)
+            foreach (var question in QuizQuestions.Questions)
             {
                 i++;
                 if (AskQuestion(question, i, 1) == false)
                     return;
             }
-            
-            showScore(true);
+
+            _intScore = QuizQuestions.Questions.Count(question => question.UserResponse == question.ValidResponse);
+            _score = _intScore >= QuizQuestions.Count() ? $"{AnsiColors.PurpleBright}PERFECT!{AnsiColors.YellowBright}" : $"{AnsiColors.YellowBoldBright}{_intScore}{AnsiColors.YellowBright}/{QuizQuestions.Count()}";
+            ShowScore(true);
         }
 
-        private static void showScore(bool yes)
+        private static void ShowScore(bool yes)
         {
             Console.Clear();
-            
-            Console.WriteLine("Vous avez répondu a toutes les questions !");
-            
-            var score = _questions.Count(question => question.UserResponse == question.ValidResponse);
-            Console.WriteLine( " ********************************************");
-            Console.WriteLine( " *                                          *");
-            Console.WriteLine($" *         Votre score: {score}/{_questions.Count}                *");                            
-            Console.WriteLine( " *                                          *");
-            Console.WriteLine( " ********************************************");
-            
-            if (score >= 5)
-            {
-                Console.WriteLine("BRAVO, tu as gagné(e)");
-            }
-            else
-            {
-                Console.WriteLine("DESOLE, la prochaine fois");
-            }
-
-            Console.WriteLine("Voulez-vous avoir un récap approfondi ?");
-            Console.Write("Oui");
-            if (yes)
-                Console.Write(" <--");
 
             Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.WhiteBright} ********************************************");
+            Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.YellowBright} Score : {_score}");
+            Console.WriteLine(" Temps passé sur le quiz : .");
+            Console.WriteLine(" Temps passé en moyenne sur une question : .");
+            Console.WriteLine();
+
+            var even = QuizQuestions.Count() / 2;
+            var message = $"{AnsiColors.BlueBright} Tout juste la moyenne ! ";
+
+            if (_intScore > even)
+                message = $"{AnsiColors.Green} Bravo ! Votre score est au dessus de la moyenne.";
             
-            Console.Write("Non");
-            if (!yes)
-                Console.Write(" <--");
+            if (_intScore < even)
+                message = $"{AnsiColors.RedBright} Vous n'avez pas la moyenne... C'est pas grave ! Et si on recommençait ?";
+
+            if (_intScore >= QuizQuestions.Count())
+                message = $"{AnsiColors.Green} Votre score est {AnsiColors.PurpleBoldBright}PARFAIT{AnsiColors.Green} ! Bravo !";
             
+            Console.WriteLine(message + AnsiColors.Reset);
+            Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.WhiteBright} ********************************************");
+            Console.WriteLine();
+
+            Console.WriteLine($"{AnsiColors.Cyan} Voulez-vous voir le récapitulatif approfondi ?");
+            Console.WriteLine();
+            Console.Write($"{AnsiColors.WhiteBright} - ");
+            Console.Write(yes ? $"{AnsiColors.CyanBold}Oui {AnsiColors.Yellow}<--" : $"{AnsiColors.Cyan}Oui");
+            Console.Write($"\n{AnsiColors.WhiteBright} - ");
+            Console.Write(yes ? $"{AnsiColors.Cyan}Non" : $"{AnsiColors.CyanBold}Non {AnsiColors.Yellow}<--");
             
             ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
-
-            int UserResponse;
             
             switch (consoleKeyInfo.Key)
             {
                 case ConsoleKey.Escape:
-                    Console.WriteLine("Annulé");
+                    End();
                     break;
                 
                 case ConsoleKey.Enter:
@@ -99,17 +90,17 @@ namespace CsharpQuiz
                 
                 case ConsoleKey.DownArrow:
                 case ConsoleKey.UpArrow:
-                    showScore(!yes);
+                    ShowScore(!yes);
                     break;
             }
         }
 
-        private static void writeQuestion(Question question, int id, int response)
+        private static void WriteQuestion(Question question, int id, int response)
         {
             Console.Clear();
             Console.WriteLine();
-            Console.WriteLine($"{_yellow} Question {id} sur {_questions.Count}{_reset}");
-            Console.WriteLine($"{_cyan} {question.Title}{_reset}");
+            Console.WriteLine($"{AnsiColors.YellowBoldBright} Question {id} sur {QuizQuestions.Count()}{AnsiColors.Reset}");
+            Console.WriteLine($"{AnsiColors.Cyan} {question.Title}{AnsiColors.Reset}");
             Console.WriteLine();
 
             var i = 1;
@@ -117,11 +108,11 @@ namespace CsharpQuiz
             {
                 if (response == i)
                 {
-                    Console.Write($" [{i}] {CYAN_BOLD}{resp}{_yellow} <--{_reset}");
+                    Console.Write($" [{i}] {AnsiColors.CyanBold}{resp}{AnsiColors.Yellow} <--{AnsiColors.Reset}");
                 }
                 else
                 {
-                    Console.Write($" {i}. {_cyan}{resp}{_reset}");
+                    Console.Write($" {i}. {AnsiColors.Cyan}{resp}{AnsiColors.Reset}");
                 }
                 Console.WriteLine();
                 i++;
@@ -132,18 +123,17 @@ namespace CsharpQuiz
 
         private static bool AskQuestion(Question question, int id, int response)
         {
-            writeQuestion(question, id, response);
+            WriteQuestion(question, id, response);
 
-            ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
+            var consoleKeyInfo = Console.ReadKey();
 
-            int UserResponse;
+            int userResponse;
 
             switch (consoleKeyInfo.Key)
             {
                 case ConsoleKey.Escape:
-                    Console.WriteLine("Annulé");
+                    End();
                     return false;
-                    break;
                 
                 case ConsoleKey.Enter:
                     if (response == 0)
@@ -152,27 +142,27 @@ namespace CsharpQuiz
                     break;
                 
                 case ConsoleKey.DownArrow:
-                    UserResponse = response + 1;
+                    userResponse = response + 1;
 
-                    if (UserResponse <= 0 || UserResponse > question.Responses.Length)
+                    if (userResponse <= 0 || userResponse > question.Responses!.Length)
                     {
                         AskQuestion(question, id, 1);
                         break;
                     }
                     
-                    AskQuestion(question, id, UserResponse);
+                    AskQuestion(question, id, userResponse);
                     break;
                 
                 case ConsoleKey.UpArrow:
-                    UserResponse = response - 1;
+                    userResponse = response - 1;
                     
-                    if (UserResponse <= 0 || UserResponse > question.Responses.Length)
+                    if (userResponse <= 0 || userResponse > question.Responses!.Length)
                     {
                         AskQuestion(question, id, 1);
                         break;
                     }
                     
-                    AskQuestion(question, id, UserResponse);
+                    AskQuestion(question, id, userResponse);
                     break;
             }
 
@@ -183,33 +173,34 @@ namespace CsharpQuiz
         {
             while (true)
             {
-                var question = _questions[index];
+                var question = QuizQuestions.Questions[index];
                 var id = index + 1;
 
                 Console.Clear();
-
-                Console.WriteLine($"(RÉCAPITULATIF) QUESTION {id} / {_questions.Count}");
                 Console.WriteLine();
-                Console.WriteLine($"{question.Title}");
+                Console.WriteLine($"{AnsiColors.YellowBoldBright} Question {id} sur {QuizQuestions.Count()}{AnsiColors.Reset}");
+                Console.WriteLine($"{AnsiColors.Cyan} {question.Title}{AnsiColors.Reset}");
                 Console.WriteLine();
 
                 var i = 1;
                 foreach (var resp in question.Responses!)
                 {
-                    Console.Write(i == question.ValidResponse ? $" ✅ {_green}" : $" ❌ {_red}");
+                    Console.Write(i == question.ValidResponse ? $" ✅ {AnsiColors.Green}" : $" ❌ {AnsiColors.Red}");
 
-                    Console.Write($" {i}. {resp}{_reset}");
+                    Console.Write($" {i}. {resp}{AnsiColors.Reset}");
 
-                    Console.Write(i == question.UserResponse ? $"{_blue} <-- Votre réponse {_reset}" : "");
+                    Console.Write(i == question.UserResponse ? $"{AnsiColors.Cyan} <-- Votre réponse {AnsiColors.Reset}" : "");
                     Console.WriteLine();
                     i++;
                 }
 
-                Console.WriteLine();
+                Console.WriteLine("\n");
 
-                Console.WriteLine(question.Recap);
+                Console.WriteLine(AnsiColors.GreenBright + "Explications : " + AnsiColors.Green + question.Recap + AnsiColors.Reset);
 
-                Console.WriteLine("\nUtilisez les flèches <- -> pour naviguer dans le récapitulatif.");
+                Console.WriteLine($"\n\n{AnsiColors.BlackBright}Utilisez les flèches <- -> pour naviguer dans le récapitulatif.\n" +
+                                  "Appuyer sur 'Entrée' passe également à la prochaine explication.\n" +
+                                  $"Appuyer sur 'Echap' pour quitter.{AnsiColors.Reset}");
 
                 var consoleKeyInfo = Console.ReadKey();
 
@@ -225,18 +216,15 @@ namespace CsharpQuiz
                         index -= 1;
                         continue;
 
+                    case ConsoleKey.Enter:
                     case ConsoleKey.RightArrow:
-                        if (index + 1 >= _questions.Count)
+                        if (index + 1 >= QuizQuestions.Count())
                             continue;
-                        else
-                        {
-                            index += 1;
-                            continue;
-                        }
-                        break;
-                    
+                        index += 1;
+                        continue;
+
                     case ConsoleKey.Escape:
-                        Console.WriteLine("bye");
+                        End();
                         break;
 
                     default:
@@ -249,156 +237,8 @@ namespace CsharpQuiz
 
         private static void End()
         {
-            Console.Clear();
-            Console.WriteLine($"Fin du récap ! Pour rappel votre score était de /{_questions.Count}. Au revoir !");
+            Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.Yellow}Au revoir !{AnsiColors.Reset}");
         }
-        
-        private static void CreateQuestions()
-        {
-            _questions = new List<Question>
-            {
-                new()
-                {
-                    Title = "Quelle variable peut avoir pour valeur true ou false ?",
-                    Responses = new[]
-                    {
-                        "Int",
-                        "String",
-                        "Boolean",
-                        "Char"
-                    },
-                    ValidResponse = 3,
-                    Recap = "Le Boolean est la bonne réponse, car les autres proposes des chaînes de caractères (String), un seul caractère (char), ou un nombre (int)."
-                },
-                new()
-                {
-                    Title = "Quelle est la bonne façon d'écrire quelque chose dans la console ?",
-                    Responses = new []
-                    {
-                        "Console.Write(“Hello world!”);",
-                        "Console.out.WriteLine(“Hello world!”);",
-                        "Console.print(“Hello world!”);",
-                        "Console.WriteLine(`Hello world!`);"
-                    },
-                    ValidResponse = 1,
-                    Recap = "La première est la bonne réponse. Même si la 4ème réponse peut sembler bonne, elle utilise les mauvais guillemets pour la chaîne de caractères."
-                },
-                 new()
-                {
-                    Title = "Lequel des éléments suivants n’est pas un type de variable valide dans le Framework .Net?",
-                    Responses = new []
-                    {
-                        "double",
-                        "int",
-                        "var",
-                        "mime"
-                    },
-                    ValidResponse = 4,
-                    Recap = "Le “mime” est une bonne réponse. En effet, ce n’est pas une variable, mais un protocole d’adresses mails, ce qui n’a rien à voir."
-                },
-                 new()
-                {
-                    Title = "Lequel de ces mots permettent de définir le début d’une boucle ?",
-                    Responses = new []
-                    {
-                        "Bool",
-                        "Loop",
-                        "For",
-                        "Whileach"
-                    },
-                    ValidResponse = 3,
-                    Recap = "La 3ème réponse est la bonne. “for” est une structure de contrôle de programmation qui permet de répéter l'exécution d'une séquence d'instructions."
-                },
-                 new()
-                {
-                    Title = $"Quel sera le résultat de cette variable ? \n\n{_blue} var result = 2 / 3;{_reset}",
-                    Responses = new []
-                    {
-                        "result de type double",
-                        "result de type decimal",
-                        "result de type float",
-                        "result de type int"
-                    },
-                    ValidResponse = 4,
-                    Recap = "La 4ème réponse est la bonne. Même si le résultat possède une virgule, tant que le calcul n’est pas effectué et directement écrit, la variable prendra comme type : int."
-                },
-                 new()
-                {
-                    Title = "Quelle est la méthode utilisée pour lire une ligne de texte depuis la console ?",
-                    Responses = new []
-                    {
-                        "Console.ReadLine()",
-                        "Console.ReadKey()",
-                        "Console.Read()",
-                        "Console.Readline()"
-                    },
-                    ValidResponse = 1,
-                    Recap = "La première réponse est la bonne. ReadLine() est une méthode qui lit entièrement la dernière ligne entrée. ReadKey() obtient le caractère suivant ou la touche de fonction sur laquelle l'utilisateur a appuyé."
-                },
-                 new()
-                {
-                    Title = "Comment déclare-t-on correctement un tableau à deux dimensions en C# ?",
-                    Responses = new []
-                    {
-                        "int[,] myArray;",
-                        "int[][] myArray;",
-                        "int[2] myArray; ",
-                        "System.Array[2] myArray;"
-                    },
-                    ValidResponse = 1,
-                    Recap = "La bonne réponse est la première. Seule la virgule présente dans “int[,]” permet de représenter un tableau multidimensionnel."
-                },
-                 new()
-                {
-                    Title = "Quelle est la différence entre les opérateurs == et Equals() en C#?",
-                    Responses = new []
-                    {
-                        "L'opérateur == compare les références, Equals() compare seulement le contenu",
-                        "L'opérateur == compare le contenu, Equals() compare les références",
-                        "L'opérateur == compare les références, Equals() compare les références",
-                        "L'opérateur == compare le contenu, Equals() compare le contenu"
-                    },
-                    ValidResponse = 1,
-                    Recap = "La bonne réponse est la première. La méthode .equals() est préférablement à utiliser pour comparer la valeur de deux Strings tandis que l'opérateur « == » les compare par référence. Également, lorsqu'il s'agit de deux Integers, il est préférable d’utiliser « == »."
-                },
-                 new()
-                {
-                    Title = "le point d'entrée du programme est une méthode :",
-                    Responses = new []
-                    {
-                        "static void Main()",
-                        "void Main(string[] args)",
-                        "static void main(string{} args)",
-                        "static void Main(string[] args) "
-                    },
-                    ValidResponse = 4,
-                    Recap = "La première réponse est la 4ème. En effet, la première n’a pas d’arguments, la deuxième n’est pas statique, et la troisième a son tableau d'argument mal orthographié."
-                },
-                 new()
-                {
-                    Title = "Quelle est la sortie de l'expression suivante : \n\nvar calcul = 5 + Math.BigMule(3, 2);",
-                    Responses = new []
-                    {
-                        "16",
-                        "11",
-                        "13",
-                        "10"
-                    },
-                    ValidResponse = 3,
-                    Recap = "La 3ème réponse est la bonne, en effet Math.BigMule(3, 2) est une opération de multiple, exactement comme “3 x 2”."
-                },
-               
-
-            };
-        }
-    }
-
-    internal class Question
-    {
-        public string? Title { get; init; }
-        public string[]? Responses { get; init; }
-        public int ValidResponse { get; init; }
-        public int UserResponse { get; set; }
-        public string? Recap { get; init; }
     }
 }

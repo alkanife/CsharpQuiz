@@ -23,6 +23,8 @@ namespace CsharpQuiz
         private static string _cyanBackground = "\u001B[46m";
         private static string _whiteBackground = "\u001B[47m";
         
+        private static string CYAN_BOLD = "\u001B[1;36m";
+        
         private static List<Question> _questions = new();
         
         private static void Main(string[] args)
@@ -39,16 +41,19 @@ namespace CsharpQuiz
             foreach (var question in _questions)
             {
                 i++;
-                if (AskQuestion(question, i) == false)
+                if (AskQuestion(question, i, 1) == false)
                     return;
             }
             
+            showScore(true);
+        }
+
+        private static void showScore(bool yes)
+        {
             Console.Clear();
             
             Console.WriteLine("Vous avez répondu a toutes les questions !");
             
-            
-
             var score = _questions.Count(question => question.UserResponse == question.ValidResponse);
             Console.WriteLine( " ********************************************");
             Console.WriteLine( " *                                          *");
@@ -56,7 +61,6 @@ namespace CsharpQuiz
             Console.WriteLine( " *                                          *");
             Console.WriteLine( " ********************************************");
             
-
             if (score >= 5)
             {
                 Console.WriteLine("BRAVO, tu as gagné(e)");
@@ -66,28 +70,41 @@ namespace CsharpQuiz
                 Console.WriteLine("DESOLE, la prochaine fois");
             }
 
-           
-            
-            Console.WriteLine("Voulez-vous avoir un récap approfondi ? (Y/n)");
-            
-            var userStringInput = Console.ReadLine();
+            Console.WriteLine("Voulez-vous avoir un récap approfondi ?");
+            Console.Write("Oui");
+            if (yes)
+                Console.Write(" <--");
 
-            if (userStringInput == null)
-            {
-                Console.WriteLine($"{_red}Erreur console (null){_reset}");
-                return;
-            }
-                
-            if (userStringInput.ToLower().Equals("n"))
-            {
-                Console.WriteLine("Au revoir");
-                return;
-            }
+            Console.WriteLine();
             
-            ShowRecap(0);
+            Console.Write("Non");
+            if (!yes)
+                Console.Write(" <--");
+            
+            
+            ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
+
+            int UserResponse;
+            
+            switch (consoleKeyInfo.Key)
+            {
+                case ConsoleKey.Escape:
+                    Console.WriteLine("Annulé");
+                    break;
+                
+                case ConsoleKey.Enter:
+                    if (yes)
+                        ShowRecap(0);
+                    break;
+                
+                case ConsoleKey.DownArrow:
+                case ConsoleKey.UpArrow:
+                    showScore(!yes);
+                    break;
+            }
         }
 
-        private static bool AskQuestion(Question question, int id)
+        private static void writeQuestion(Question question, int id, int response)
         {
             Console.Clear();
             Console.WriteLine();
@@ -98,44 +115,66 @@ namespace CsharpQuiz
             var i = 1;
             foreach (var resp in question.Responses!)
             {
-                Console.WriteLine($" {i}. {_cyan}{resp}{_reset}");
+                if (response == i)
+                {
+                    Console.Write($" [{i}] {CYAN_BOLD}{resp}{_yellow} <--{_reset}");
+                }
+                else
+                {
+                    Console.Write($" {i}. {_cyan}{resp}{_reset}");
+                }
+                Console.WriteLine();
                 i++;
             }
             
             Console.WriteLine();
+        }
 
-            do
+        private static bool AskQuestion(Question question, int id, int response)
+        {
+            writeQuestion(question, id, response);
+
+            ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
+
+            int UserResponse;
+
+            switch (consoleKeyInfo.Key)
             {
-                Console.Write($"Votre réponse : {_purple}");
-
-                var userStringInput = Console.ReadLine();
-                
-                Console.Write($"{_reset}");
-
-                if (userStringInput == null)
-                {
-                    Console.WriteLine("Erreur console (null)");
-                    return false;
-                }
-                
-                if (userStringInput.ToLower().Equals("exit"))
-                {
+                case ConsoleKey.Escape:
                     Console.WriteLine("Annulé");
                     return false;
-                }
-                
-                var tryParse = TryParse(userStringInput, out var userIntInput);
-
-                if (!tryParse || userIntInput == 0 || userIntInput > question.Responses.Length)
-                {
-                    Console.WriteLine($"{_red}Réponse invalide (doit entre 1 et {question.Responses.Length}){_reset}");
-                }
-                else
-                {
-                    question.UserResponse = userIntInput;
                     break;
-                }
-            } while (true);
+                
+                case ConsoleKey.Enter:
+                    if (response == 0)
+                        response = 1;
+                    question.UserResponse = response;
+                    break;
+                
+                case ConsoleKey.DownArrow:
+                    UserResponse = response + 1;
+
+                    if (UserResponse <= 0 || UserResponse > question.Responses.Length)
+                    {
+                        AskQuestion(question, id, 1);
+                        break;
+                    }
+                    
+                    AskQuestion(question, id, UserResponse);
+                    break;
+                
+                case ConsoleKey.UpArrow:
+                    UserResponse = response - 1;
+                    
+                    if (UserResponse <= 0 || UserResponse > question.Responses.Length)
+                    {
+                        AskQuestion(question, id, 1);
+                        break;
+                    }
+                    
+                    AskQuestion(question, id, UserResponse);
+                    break;
+            }
 
             return true;
         }
@@ -188,12 +227,16 @@ namespace CsharpQuiz
 
                     case ConsoleKey.RightArrow:
                         if (index + 1 >= _questions.Count)
-                            End();
+                            continue;
                         else
                         {
                             index += 1;
                             continue;
                         }
+                        break;
+                    
+                    case ConsoleKey.Escape:
+                        Console.WriteLine("bye");
                         break;
 
                     default:

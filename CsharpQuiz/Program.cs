@@ -2,6 +2,13 @@
 {
     internal abstract class Program
     {
+        private static bool _examMode;
+        private static int seconds;
+        private static int currentQuestionId;
+        private static bool timeIsUp = false;
+        private static bool stopTimer = false;
+        private static int lastResponse = 1;
+        
         private static string? _score;
         private static int _intScore;
 
@@ -13,32 +20,24 @@
         {
             QuizQuestions.CreateQuestions();
 
-            Console.Clear();
-            Console.WriteLine(" .d88888b.           d8b                         .d8888b.    888  888   ");
-            Console.WriteLine("d88P\" \"Y88b          Y8P                        d88P  Y88b   888  888   ");
-            Console.WriteLine("888     888                                     888    888 888888888888 ");
-            Console.WriteLine("888     888 888  888 888 88888888 88888888      888          888  888   ");
-            Console.WriteLine("888     888 888  888 888    d88P     d88P       888          888  888   ");
-            Console.WriteLine("888 Y8b 888 888  888 888   d88P     d88P        888    888 888888888888 ");
-            Console.WriteLine("Y88b.Y8b88P Y88b 888 888  d88P     d88P         Y88b  d88P   888  888   ");
-            Console.WriteLine(" \"Y888888\"   \"Y88888 888 88888888 88888888       \"Y8888P\"    888  888   ");
-            Console.WriteLine();
-            Console.WriteLine($"{AnsiColors.CyanBright}Bienvenue à ce quiz C# !");
-            Console.WriteLine($"{AnsiColors.CyanBright}Vous allez devoir répondre à {AnsiColors.White}{QuizQuestions.Count()} {AnsiColors.CyanBright}questions, chacune vous rapportant 1 point.{AnsiColors.Reset}");
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine($"{AnsiColors.BlackBright}Appuyez sur une touche pour continuer...{AnsiColors.Reset}");
-            Console.ReadKey();
+            ChooseExamMode(false);
 
             _lastQuestionDateTime = DateTime.Now;
+
+            seconds = 1;
+            StartTimer();
 
             var i = 0;
             foreach (var question in QuizQuestions.Questions)
             {
                 i++;
+                currentQuestionId = i;
+                seconds = 1;
                 if (AskQuestion(question, i, 1) == false)
                     return;
             }
+
+            stopTimer = true;
 
             // Calcul score
             _intScore = QuizQuestions.Questions.Count(question => question.UserResponse == question.ValidResponse);
@@ -59,7 +58,101 @@
             ShowScore(true);
         }
 
-        private static void ShowScore(bool yes)
+        private static async void StartTimer()
+        {
+            if (!_examMode)
+                return;
+            
+            await Task.Run(() =>
+            {
+                System.Timers.Timer timer = new System.Timers.Timer(1000);
+
+                timer.Elapsed += (sender, eventArgs) =>
+                {
+                    if (stopTimer) // J'ai pas trouvé comment arrêté ce timer ducoup j'ai mis ça pour l'instant
+                        return;    // (C'est honteux)
+
+                    Console.SetCursorPosition(30, 1);
+                    if (timeIsUp)
+                        Console.Write("PLUS DE TEMPS");
+                    else
+                        Console.Write($"{seconds}s               ");
+
+                    if (seconds > 9)
+                    {
+                        if (!timeIsUp)
+                        {
+                            timeIsUp = true;
+                            WriteQuestion(QuizQuestions.Questions[currentQuestionId-1], currentQuestionId, lastResponse);
+                        }
+                        return;
+                    }
+                    
+                    seconds++;
+                };
+                timer.Start();
+                return Task.CompletedTask;
+            });
+        }
+
+        private static void ChooseExamMode(bool examMode)
+        {
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine(" .d88888b.           d8b                         .d8888b.    888  888   ");
+                Console.WriteLine("d88P\" \"Y88b          Y8P                        d88P  Y88b   888  888   ");
+                Console.WriteLine("888     888                                     888    888 888888888888 ");
+                Console.WriteLine("888     888 888  888 888 88888888 88888888      888          888  888   ");
+                Console.WriteLine("888     888 888  888 888    d88P     d88P       888          888  888   ");
+                Console.WriteLine("888 Y8b 888 888  888 888   d88P     d88P        888    888 888888888888 ");
+                Console.WriteLine("Y88b.Y8b88P Y88b 888 888  d88P     d88P         Y88b  d88P   888  888   ");
+                Console.WriteLine(" \"Y888888\"   \"Y88888 888 88888888 88888888       \"Y8888P\"    888  888   ");
+                Console.WriteLine();
+                Console.WriteLine($"{AnsiColors.CyanBright}Bienvenue à ce quiz C# !");
+                Console.WriteLine($"{AnsiColors.CyanBright}Vous allez devoir répondre à {AnsiColors.White}{QuizQuestions.Count()} {AnsiColors.CyanBright}questions, chacune vous rapportant 1 point.{AnsiColors.Reset}");
+                Console.WriteLine();
+                Console.WriteLine();
+                Console.WriteLine($"{AnsiColors.Cyan} Choisissez le mode du quiz :");
+                Console.WriteLine();
+
+                Console.Write(examMode
+                    ? $"{AnsiColors.WhiteBright} - {AnsiColors.Cyan}Mode normal"
+                    : $"{AnsiColors.WhiteBright} [-] {AnsiColors.CyanBold}Mode normal {AnsiColors.Yellow}<--");
+                Console.Write("\n");
+                Console.Write(examMode
+                    ? $"{AnsiColors.WhiteBright} [-] {AnsiColors.CyanBold}Mode examen {AnsiColors.Yellow}<--"
+                    : $"{AnsiColors.WhiteBright} - {AnsiColors.Cyan}Mode examen");
+                
+
+                Console.WriteLine(AnsiColors.White);
+
+                var consoleKeyInfo = Console.ReadKey();
+
+                switch (consoleKeyInfo.Key)
+                {
+                    case ConsoleKey.Escape:
+                        End();
+                        break;
+
+                    case ConsoleKey.Enter:
+                        _examMode = examMode;
+                        break;
+
+                    case ConsoleKey.DownArrow:
+                    case ConsoleKey.UpArrow:
+                        examMode = !examMode;
+                        continue;
+
+                    default:
+                        continue;
+                }
+
+                break;
+            }
+        }
+
+        private static void ShowScore(bool continueToRecap)
         {
             while (true)
             {
@@ -91,12 +184,12 @@
                 Console.WriteLine($"{AnsiColors.Cyan} Voulez-vous voir le récapitulatif approfondi ?");
                 Console.WriteLine();
 
-                Console.Write(yes
+                Console.Write(continueToRecap
                     ? $"{AnsiColors.WhiteBright} [-] {AnsiColors.CyanBold}Oui {AnsiColors.Yellow}<--"
                     : $"{AnsiColors.WhiteBright} - {AnsiColors.Cyan}Oui");
 
                 Console.Write("\n");
-                Console.Write(yes
+                Console.Write(continueToRecap
                     ? $"{AnsiColors.WhiteBright} - {AnsiColors.Cyan}Non"
                     : $"{AnsiColors.WhiteBright} [-] {AnsiColors.CyanBold}Non {AnsiColors.Yellow}<--");
 
@@ -111,12 +204,12 @@
                         break;
 
                     case ConsoleKey.Enter:
-                        if (yes) ShowRecap(0);
+                        if (continueToRecap) ShowRecap(0);
                         break;
 
                     case ConsoleKey.DownArrow:
                     case ConsoleKey.UpArrow:
-                        yes = !yes;
+                        continueToRecap = !continueToRecap;
                         continue;
 
                     default:
@@ -132,21 +225,48 @@
             Console.Clear();
             Console.WriteLine();
             Console.WriteLine($"{AnsiColors.YellowBoldBright} Question {id} sur {QuizQuestions.Count()}{AnsiColors.Reset}");
+            if (_examMode)
+            {
+                Console.SetCursorPosition(30, 1);
+                if (timeIsUp)
+                    Console.Write("PLUS DE TEMPS");
+                else
+                    Console.Write($"{seconds}s               ");
+                Console.Write("\n");
+            }
             Console.WriteLine($"{AnsiColors.Cyan} {question.Title}{AnsiColors.Reset}");
             Console.WriteLine();
 
-            var i = 1;
-            foreach (var resp in question.Responses!)
+            if (timeIsUp)
             {
-                Console.Write(response == i
-                    ? $" [{i}] {AnsiColors.CyanBold}{resp}{AnsiColors.Yellow} <--{AnsiColors.Reset}"
-                    : $" {i}. {AnsiColors.Cyan}{resp}{AnsiColors.Reset}");
-                Console.WriteLine();
-                i++;
-            }
+                var i = 1;
+                foreach (var resp in question.Responses!)
+                {
+                    Console.Write(response == i
+                        ? $" [{i}] {AnsiColors.CyanBold}{resp}{AnsiColors.Yellow} <--{AnsiColors.Reset}"
+                        : $" {i}. {AnsiColors.BlackBright}{resp}{AnsiColors.Reset}");
+                    Console.WriteLine();
+                    i++;
+                }
             
-            Console.WriteLine();
-            Console.WriteLine($"{AnsiColors.BlackBright}Appuyer sur 'Echap' pour quitter.{AnsiColors.Reset}");
+                Console.WriteLine();
+                Console.WriteLine($"{AnsiColors.BlackBright}Vous n'avez plus de temps.\nAppuyer sur 'Entrée' pour continuer et valider votre réponse.{AnsiColors.Reset}");
+            }
+            else
+            {
+                var i = 1;
+                foreach (var resp in question.Responses!)
+                {
+                    Console.Write(response == i
+                        ? $" [{i}] {AnsiColors.CyanBold}{resp}{AnsiColors.Yellow} <--{AnsiColors.Reset}"
+                        : $" {i}. {AnsiColors.Cyan}{resp}{AnsiColors.Reset}");
+                    Console.WriteLine();
+                    i++;
+                }
+            
+                Console.WriteLine();
+                Console.WriteLine($"{AnsiColors.BlackBright}Appuyer sur 'Echap' pour quitter.{AnsiColors.Reset}");
+            }
         }
 
         private static bool AskQuestion(Question question, int id, int response)
@@ -169,34 +289,52 @@
                     question.UserResponse = response;
                     question.TimeSpan = DateTime.Now.Subtract(_lastQuestionDateTime);
                     _lastQuestionDateTime = DateTime.Now;
+                    timeIsUp = false;
                     break;
                 
                 case ConsoleKey.DownArrow:
+                    if (timeIsUp)
+                    {
+                        AskQuestion(question, id, response);
+                        break;
+                    }
+                    
                     userResponse = response + 1;
 
                     if (userResponse <= 0 || userResponse > question.Responses!.Length)
                     {
+                        lastResponse = 1;
                         AskQuestion(question, id, 1);
                         break;
                     }
                     
+                    lastResponse = userResponse;
                     AskQuestion(question, id, userResponse);
                     break;
                 
                 case ConsoleKey.UpArrow:
+                    if (timeIsUp)
+                    {
+                        AskQuestion(question, id, response);
+                        break;
+                    }
+                    
                     userResponse = response - 1;
                     
                     if (userResponse <= 0 || userResponse > question.Responses!.Length)
                     {
+                        lastResponse = 1;
                         AskQuestion(question, id, 1);
                         break;
                     }
                     
+                    lastResponse = userResponse;
                     AskQuestion(question, id, userResponse);
                     break;
                 
                 default:
-                    AskQuestion(question, id, 1);
+                    lastResponse = response;
+                    AskQuestion(question, id, response);
                     break;
             }
 

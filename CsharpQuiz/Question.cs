@@ -7,4 +7,6 @@ public class Question
     public int ValidResponse { get; init; }
     public int UserResponse { get; set; }
     public string? Recap { get; init; }
+    
+    public TimeSpan TimeSpan { get; set; }
 }

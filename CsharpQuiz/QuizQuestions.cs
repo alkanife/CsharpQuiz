@@ -135,8 +135,8 @@ public class QuizQuestions
                         "13",
                         "10"
                     },
-                    ValidResponse = 3,
-                    Recap = "La 3ème réponse est la bonne, en effet Math.BigMule(3, 2) est une opération de multiple, exactement comme “3 x 2”."
+                    ValidResponse = 2,
+                    Recap = "La 2ème réponse est la bonne, en effet Math.BigMule(3, 2) est une opération de multiple, exactement comme “3 x 2”."
                 },
                
 

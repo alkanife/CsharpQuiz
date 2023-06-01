@@ -3,11 +3,11 @@
     internal abstract class Program
     {
         private static bool _examMode;
-        private static int seconds;
-        private static int currentQuestionId;
-        private static bool timeIsUp = false;
-        private static bool stopTimer = false;
-        private static int lastResponse = 1;
+        private static int _timerSeconds;
+        private static Question _currentQuestion;
+        private static int _currentQuestionId = -1;
+        private static bool _stopTimer = false;
+        private static int _userResponse = 1;
         
         private static string? _score;
         private static int _intScore;
@@ -22,22 +22,132 @@
 
             ChooseExamMode(false);
 
-            _lastQuestionDateTime = DateTime.Now;
-
-            seconds = 1;
+            NextQuestion(false);
+            
+            _timerSeconds = 1;
             StartTimer();
 
-            var i = 0;
-            foreach (var question in QuizQuestions.Questions)
-            {
-                i++;
-                currentQuestionId = i;
-                seconds = 1;
-                if (AskQuestion(question, i, 1) == false)
-                    return;
-            }
+            HandleUserChoices();
+        }
 
-            stopTimer = true;
+        private static void HandleUserChoices()
+        {
+            var consoleKeyInfo = Console.ReadKey();
+
+            if (_stopTimer)
+            {
+                ShowScore(true);
+                return;
+            }
+            
+            switch (consoleKeyInfo.Key)
+            {
+                case ConsoleKey.Escape:
+                    End();
+                    break;
+                
+                case ConsoleKey.Enter:
+                    NextQuestion(true);
+                    HandleUserChoices();
+                    break;
+                
+                case ConsoleKey.DownArrow:
+                    _userResponse++;
+
+                    if (IsNotAValidChoice())
+                    {
+                        _userResponse = 1;
+                        WriteQuestion();
+                        HandleUserChoices();
+                        break;
+                    }
+                    
+                    WriteQuestion();
+                    HandleUserChoices();
+                    break;
+                
+                case ConsoleKey.UpArrow:
+                    _userResponse--;
+                    
+                    if (IsNotAValidChoice())
+                    {
+                        _userResponse = 1;
+                        WriteQuestion();
+                        HandleUserChoices();
+                        break;
+                    }
+                    
+                    WriteQuestion();
+                    HandleUserChoices();
+                    break;
+                
+                default:
+                    WriteQuestion();
+                    HandleUserChoices();
+                    break;
+            }
+        }
+        
+        private static bool IsNotAValidChoice()
+        {
+            return _userResponse <= 0 || _userResponse > _currentQuestion.Responses!.Length;
+        }
+        
+        private static void WriteQuestion()
+        {
+            Console.Clear();
+            Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.YellowBoldBright} Question {(_currentQuestionId+1)} sur {QuizQuestions.Count()}{AnsiColors.Reset}");
+            if (_examMode)
+            {
+                Console.SetCursorPosition(30, 1);
+                Console.Write($"{_timerSeconds}s               ");
+                Console.Write("\n");
+            }
+            Console.WriteLine($"{AnsiColors.Cyan} {_currentQuestion.Title}{AnsiColors.Reset}");
+            Console.WriteLine();
+
+            var i = 1;
+            foreach (var resp in _currentQuestion.Responses!)
+            {
+                Console.Write(_userResponse == i
+                    ? $" [{i}] {AnsiColors.CyanBold}{resp}{AnsiColors.Yellow} <--{AnsiColors.Reset}"
+                    : $" {i}. {AnsiColors.Cyan}{resp}{AnsiColors.Reset}");
+                Console.WriteLine();
+                i++;
+            }
+            
+            Console.WriteLine();
+            Console.WriteLine($"{AnsiColors.BlackBright}Appuyer sur 'Echap' pour quitter.{AnsiColors.Reset}");
+        }
+
+        private static void NextQuestion(bool validate)
+        {
+            if (validate)
+            {
+                _currentQuestion.UserResponse = _userResponse;
+                _currentQuestion.TimeSpan = DateTime.Now.Subtract(_lastQuestionDateTime);
+            }
+            
+            _timerSeconds = 1;
+            _lastQuestionDateTime = DateTime.Now;
+            
+            _currentQuestionId++;
+            if (_currentQuestionId >= QuizQuestions.Questions.Count)
+            {
+                calculScoreAndTime();
+                ShowScore(true);
+                return;
+            }
+            
+            _currentQuestion = QuizQuestions.Questions[_currentQuestionId];
+                    
+            WriteQuestion();
+        }
+        
+        private static void calculScoreAndTime()
+        {
+            _stopTimer = true;
 
             // Calcul score
             _intScore = QuizQuestions.Questions.Count(question => question.UserResponse == question.ValidResponse);
@@ -69,26 +179,19 @@
 
                 timer.Elapsed += (sender, eventArgs) =>
                 {
-                    if (stopTimer) // J'ai pas trouvé comment arrêté ce timer ducoup j'ai mis ça pour l'instant
+                    if (_stopTimer) // J'ai pas trouvé comment arrêté ce timer ducoup j'ai mis ça pour l'instant
                         return;    // (C'est honteux)
 
                     Console.SetCursorPosition(30, 1);
-                    if (timeIsUp)
-                        Console.Write("PLUS DE TEMPS");
-                    else
-                        Console.Write($"{seconds}s               ");
+                    Console.Write($"{_timerSeconds}s               ");
 
-                    if (seconds > 9)
+                    if (_timerSeconds > 3)
                     {
-                        if (!timeIsUp)
-                        {
-                            timeIsUp = true;
-                            WriteQuestion(QuizQuestions.Questions[currentQuestionId-1], currentQuestionId, lastResponse);
-                        }
+                        NextQuestion(true); // pour l'instant on valide la réponse quand on skip
                         return;
                     }
                     
-                    seconds++;
+                    _timerSeconds++;
                 };
                 timer.Start();
                 return Task.CompletedTask;
@@ -204,7 +307,10 @@
                         break;
 
                     case ConsoleKey.Enter:
-                        if (continueToRecap) ShowRecap(0);
+                        if (continueToRecap)
+                            ShowRecap(0);
+                        else
+                            End();
                         break;
 
                     case ConsoleKey.DownArrow:
@@ -218,127 +324,6 @@
 
                 break;
             }
-        }
-
-        private static void WriteQuestion(Question question, int id, int response)
-        {
-            Console.Clear();
-            Console.WriteLine();
-            Console.WriteLine($"{AnsiColors.YellowBoldBright} Question {id} sur {QuizQuestions.Count()}{AnsiColors.Reset}");
-            if (_examMode)
-            {
-                Console.SetCursorPosition(30, 1);
-                if (timeIsUp)
-                    Console.Write("PLUS DE TEMPS");
-                else
-                    Console.Write($"{seconds}s               ");
-                Console.Write("\n");
-            }
-            Console.WriteLine($"{AnsiColors.Cyan} {question.Title}{AnsiColors.Reset}");
-            Console.WriteLine();
-
-            if (timeIsUp)
-            {
-                var i = 1;
-                foreach (var resp in question.Responses!)
-                {
-                    Console.Write(response == i
-                        ? $" [{i}] {AnsiColors.CyanBold}{resp}{AnsiColors.Yellow} <--{AnsiColors.Reset}"
-                        : $" {i}. {AnsiColors.BlackBright}{resp}{AnsiColors.Reset}");
-                    Console.WriteLine();
-                    i++;
-                }
-            
-                Console.WriteLine();
-                Console.WriteLine($"{AnsiColors.BlackBright}Vous n'avez plus de temps.\nAppuyer sur 'Entrée' pour continuer et valider votre réponse.{AnsiColors.Reset}");
-            }
-            else
-            {
-                var i = 1;
-                foreach (var resp in question.Responses!)
-                {
-                    Console.Write(response == i
-                        ? $" [{i}] {AnsiColors.CyanBold}{resp}{AnsiColors.Yellow} <--{AnsiColors.Reset}"
-                        : $" {i}. {AnsiColors.Cyan}{resp}{AnsiColors.Reset}");
-                    Console.WriteLine();
-                    i++;
-                }
-            
-                Console.WriteLine();
-                Console.WriteLine($"{AnsiColors.BlackBright}Appuyer sur 'Echap' pour quitter.{AnsiColors.Reset}");
-            }
-        }
-
-        private static bool AskQuestion(Question question, int id, int response)
-        {
-            WriteQuestion(question, id, response);
-
-            var consoleKeyInfo = Console.ReadKey();
-
-            int userResponse;
-
-            switch (consoleKeyInfo.Key)
-            {
-                case ConsoleKey.Escape:
-                    End();
-                    return false;
-                
-                case ConsoleKey.Enter:
-                    if (response == 0)
-                        response = 1;
-                    question.UserResponse = response;
-                    question.TimeSpan = DateTime.Now.Subtract(_lastQuestionDateTime);
-                    _lastQuestionDateTime = DateTime.Now;
-                    timeIsUp = false;
-                    break;
-                
-                case ConsoleKey.DownArrow:
-                    if (timeIsUp)
-                    {
-                        AskQuestion(question, id, response);
-                        break;
-                    }
-                    
-                    userResponse = response + 1;
-
-                    if (userResponse <= 0 || userResponse > question.Responses!.Length)
-                    {
-                        lastResponse = 1;
-                        AskQuestion(question, id, 1);
-                        break;
-                    }
-                    
-                    lastResponse = userResponse;
-                    AskQuestion(question, id, userResponse);
-                    break;
-                
-                case ConsoleKey.UpArrow:
-                    if (timeIsUp)
-                    {
-                        AskQuestion(question, id, response);
-                        break;
-                    }
-                    
-                    userResponse = response - 1;
-                    
-                    if (userResponse <= 0 || userResponse > question.Responses!.Length)
-                    {
-                        lastResponse = 1;
-                        AskQuestion(question, id, 1);
-                        break;
-                    }
-                    
-                    lastResponse = userResponse;
-                    AskQuestion(question, id, userResponse);
-                    break;
-                
-                default:
-                    lastResponse = response;
-                    AskQuestion(question, id, response);
-                    break;
-            }
-
-            return true;
         }
 
         private static void ShowRecap(int index)
@@ -410,6 +395,7 @@
                         continue;
                 }
 
+                ShowRecap(index);
                 break;
             }
         }
